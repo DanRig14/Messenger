@@ -5,13 +5,15 @@ import threading
 #recieves messages so you do not have to send a message to see a message
 def recieve_message():
     while True:
-        #recieves data
-        data = client_socket.recv(1024)
+        try:
+            #data that was recieved (up to 1024 bytes)
+            data = client_socket.recv(1024)
+        except ConnectionAbortedError:
+            break
         if not data:
             break
         #prints data on new line
         print("\nRecieved: ", data.decode())
-        print(">", end="")
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 

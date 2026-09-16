@@ -9,8 +9,12 @@ def handle_client(connection, address):
     print("Connected by: ", address)
 
     while True:
-        #data that was recieved (up to 1024 bytes)
-        data = connection.recv(1024)
+        try:
+            #data that was recieved (up to 1024 bytes)
+            data = connection.recv(1024)
+        except ConnectionResetError:
+            break
+        
         if not data:
             break
         #prints data
@@ -21,7 +25,7 @@ def handle_client(connection, address):
             client.sendall(data)
             
     connection.close()
-    client.remove(connection)
+    clients.remove(connection)
     print("Disconnected: ", address)
 
 
