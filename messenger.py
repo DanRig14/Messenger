@@ -1,19 +1,22 @@
 import socket
 import threading
+import queue
 
+message_queue = queue.Queue()
 
 #recieves messages so you do not have to send a message to see a message
 def recieve_message():
     while True:
         try:
-            #data that was recieved (up to 1024 bytes)
             data = client_socket.recv(1024)
         except ConnectionAbortedError:
             break
+
         if not data:
             break
-        #prints data on new line
-        print("\nRecieved: ", data.decode())
+
+        message = data.decode().strip()
+        message_queue.put(message)
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -27,18 +30,34 @@ recieve_thread = threading.Thread(
 recieve_thread.start()
 
 
+
 while True:
-    #gets message
-    message = input(">")
-    
-    #if exit then stop 
+    message = input("> ")
+    client_socket.sendall((message + "\n").encode())
+
+    response = message_queue.get()
+    print("Server said:", response)
+
+    if response == "USERNAME":
+        username = input("Username: ")
+        client_socket.sendall((username + "\n").encode())
+
+        response = message_queue.get()
+
+        if response == "PASSWORD":
+            password = input("Password: ")
+            client_socket.sendall((password + "\n").encode())
+
+            response = message_queue.get()
+
+            if response == "LOGIN_SUCCESS":
+                print("Successful login!")
+            elif response == "LOGIN_FAILED":
+                print("Login failed!")
+
     if message == "exit":
         break
-    
-    #sends message to all clients
-    client_socket.sendall(message.encode())
-    #set data as recieving any data IN up to 1024 bytes
-    
+
 #if exiting closes that clients socket
 client_socket.close()
     
