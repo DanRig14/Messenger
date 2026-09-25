@@ -20,8 +20,28 @@ Tech: Python, PostgresSQL, TCP, Argon2, Git
 
 # Known Bugs
 
-## ID    |Status |Priority   |Date added |Date fixed |Description
-- Fx0001    open    low     09/24/2026       xxx        There is an unnesecary space betwen last text and incoming message
-- FNx0001   open    high    09/24/2026       xxx        After you send a message you are put on a newline and unable to type or "crtl + c"
+## F0001 - Message Spacing
 
+| Field | Details |
+|---|---|
+| **Status** | Open |
+| **Priority** | Low |
+| **Date Added** | 09/24/2026 |
+| **Date Fixed** | — |
 
+**Description:**  
+There is an unnecessary space between the last text and an incoming message.
+
+------
+
+## FN0001 - Message Input
+
+| Field | Details |
+|---|---|
+| **Status** | Open |
+| **Priority** | High |
+| **Date Added** | 09/24/2026 |
+| **Date Fixed** | — |
+
+**Description:**  
+After sending a message, the client moves to a new line and becomes unable to accept input or `Ctrl+C`.
