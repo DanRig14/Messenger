@@ -47,5 +47,72 @@ There is an unnecessary space between the last text and an incoming message.
 After sending a message, the client moves to a new line and becomes unable to accept input or `Ctrl+C`.
 
 </td>
+
+<td width="50%" valign="top">
+
+### FN0001 - Message Input
+
+**Status:** Open  
+**Priority:** High  
+**Date Added:** 09/24/2026  
+**Date Fixed:** —  
+
+**Description** After sending a message, the client moves to a new line and becomes unable to accept input or `Ctrl+C`.
+
+</td>
+
+
+
+<td width="50%" valign="top">
+
+### xxx -
+
+**Status:**   
+**Priority:**   
+**Date Added:** 
+**Date Fixed:** —  
+
+**Description**
+
+</td>
+
+<td width="50%" valign="top">
+
+### xxx -
+
+**Status:**   
+**Priority:**   
+**Date Added:** 
+**Date Fixed:** —  
+
+**Description**
+
+</td>
+
+<td width="50%" valign="top">
+
+### xxx -
+
+**Status:**   
+**Priority:**   
+**Date Added:** 
+**Date Fixed:** —  
+
+**Description**
+
+</td>
+
+<td width="50%" valign="top">
+
+### xxx -
+
+**Status:**   
+**Priority:**   
+**Date Added:** 
+**Date Fixed:** —  
+
+**Description**
+
+</td>
 </tr>
 </table>
