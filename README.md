@@ -20,28 +20,32 @@ Tech: Python, PostgresSQL, TCP, Argon2, Git
 
 # Known Bugs
 
-## F0001 - Message Spacing
+<table>
+<tr>
+<td width="50%" valign="top">
 
-| Field | Details |
-|---|---|
-| **Status** | Open |
-| **Priority** | Low |
-| **Date Added** | 09/24/2026 |
-| **Date Fixed** | — |
+### F0001 - Message Spacing
 
-**Description:**  
+**Status:** Open  
+**Priority:** Low  
+**Date Added:** 09/24/2026  
+**Date Fixed:** —  
+
 There is an unnecessary space between the last text and an incoming message.
 
-------
+</td>
 
-## FN0001 - Message Input
+<td width="50%" valign="top">
 
-| Field | Details |
-|---|---|
-| **Status** | Open |
-| **Priority** | High |
-| **Date Added** | 09/24/2026 |
-| **Date Fixed** | — |
+### FN0001 - Message Input
 
-**Description:**  
+**Status:** Open  
+**Priority:** High  
+**Date Added:** 09/24/2026  
+**Date Fixed:** —  
+
 After sending a message, the client moves to a new line and becomes unable to accept input or `Ctrl+C`.
+
+</td>
+</tr>
+</table>
