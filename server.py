@@ -6,7 +6,7 @@ import os
 from argon2 import PasswordHasher
 
 load_dotenv()
-
+#connects to PostgresSQL
 password_hasher = PasswordHasher()
 connection = psycopg.connect(
     host=os.getenv("DB_HOST"),
@@ -35,7 +35,9 @@ client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 #instead of only accepting 1 it will accpet and go to another client
 def handle_client(connection, address):
+    #what stage of the login proccess the client is int
     login_stage = None
+    #if they are logged in
     logged_in_user = None
     print("Connected by:", address)
 
@@ -58,6 +60,8 @@ def handle_client(connection, address):
             message, buffer = buffer.split("\n", 1)
             print("MESSAGE:", repr(message))
             
+            
+            #LOGIN PROCESS
             if message == "LOGIN":
                 login_stage = "username"
                 print("Client wants login")
@@ -82,21 +86,60 @@ def handle_client(connection, address):
                 else:
                     password_hash = user[0]
 
+                    #check if password is correct
                     try:
                         password_hasher.verify(password_hash, password)
                         logged_in_user = username
+                        logged_in_users[username] = connection
+                        print(logged_in_users)
                         connection.sendall(b"LOGIN_SUCCESS\n")
                     except:
                         connection.sendall(b"LOGIN_FAILED\n")
                 login_stage = None
-            
-            
+                #if user tries to send message then send a message if they are logged in
+            elif logged_in_user is not None and message.startswith("MESSAGE"):
+                handle_message(message,logged_in_user)           
             
 
     connection.close()
     clients.remove(connection)
     print("Disconnected:", address)
 
+
+#handles sending messages
+def handle_message(message, sender):
+    #gets message and prints it
+    print("Message Command: ", message)
+    #takes message and splits it into 3 parts
+    parts = message.split(" ", 2)
+    #who the reciever is
+    reciever = parts[1]
+    #what the message is
+    msg = parts[2]
+    
+    #because PostgresSQL uses user_id for storing, must grab the id from the user
+    cursor.execute(
+        "SELECT id FROM users WHERE username = %s",(sender,)
+    )
+    #sets variable id for user_id
+    sender_id = cursor.fetchone()[0]
+    #prints sender's id
+    print("SENDER ID: ", sender_id)
+    #gets connection where the message will go / the recievers connection
+    reciever_connection = logged_in_users.get(reciever)
+    print(reciever_connection)
+    #if there is no connection then there is no user or they are offline
+    if reciever_connection is None:
+        print("User not online or not available")
+    #if connection prints reciever
+    else:
+        print("Sending message to", reciever)
+        #sends message
+        reciever_connection.sendall(
+            ("MESSAGE " + sender + ": " + msg + "\n").encode()
+        )
+        print("Message sent!")
+    
 
 #create sockets 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

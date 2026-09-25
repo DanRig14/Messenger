@@ -15,8 +15,17 @@ def recieve_message():
         if not data:
             break
 
-        message = data.decode().strip()
-        message_queue.put(message)
+        message = data.decode().strip() 
+        #handles recieving message
+        if message.startswith("MESSAGE"):
+            #prints message (without MESSAGE)
+            print("\n" + message[8:])
+            print("> ", end="", flush=True)
+        else:
+            #if its not a MESSAGE put into queue
+            message_queue.put(message)
+                
+            
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -32,18 +41,22 @@ recieve_thread.start()
 
 
 while True:
+    #input from user
     message = input("> ")
     client_socket.sendall((message + "\n").encode())
 
     response = message_queue.get()
     print("Server said:", response)
 
+    #if response from server is USERNAME allow client to into username
     if response == "USERNAME":
         username = input("Username: ")
+        #sends username back from client to server
         client_socket.sendall((username + "\n").encode())
 
         response = message_queue.get()
 
+        #same as username
         if response == "PASSWORD":
             password = input("Password: ")
             client_socket.sendall((password + "\n").encode())
@@ -55,6 +68,7 @@ while True:
             elif response == "LOGIN_FAILED":
                 print("Login failed!")
 
+    #if client enters exit then break connection
     if message == "exit":
         break
 
