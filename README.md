@@ -81,7 +81,7 @@ Tech: Python, PostgresSQL, TCP, Argon2, Git
 
 </td>
 </tr>
-</table
+</table>
 
 <table>
 <tr>
