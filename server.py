@@ -97,8 +97,10 @@ def handle_client(client_socket, address):
                 login_stage = None
                 #if user tries to send message then send a message if they are logged in
             elif logged_in_user is not None and message.startswith("MESSAGE"):
-                handle_message(message,logged_in_user)           
-            
+                handle_message(message,logged_in_user)    
+                
+            elif logged_in_user is not None and message.startswith("HISTORY"):
+                handle_history(message, logged_in_user,client_socket)            
 
     client_socket.close()
     clients.remove(client_socket)
@@ -116,21 +118,14 @@ def handle_message(message, sender):
     #what the message is
     msg = parts[2]
     
-    #because PostgresSQL uses user_id for storing, must grab the id from the user
-    cursor.execute(
-        "SELECT id FROM users WHERE username = %s",(sender,)
-    )
     #sets variable id for user_id
-    sender_id = cursor.fetchone()[0]
+    sender_id = get_sender_id(sender)
     #prints sender's id
     print("SENDER ID: ", sender_id)
     
     #same for sender ID
-    cursor.execute(
-        "SELECT id FROM users WHERE username = %s", (receiver,)
-    )
-    receiver_id  = cursor.fetchone()[0]
-    print("RECIEVER ID: ", receiver_id)
+    receiver_id  = get_receiver_id(receiver)
+    print("Receiver ID: ", receiver_id)
     
     #inserts query into database with sender_id, receiver_id, and the message, with the date and time done automatically
     cursor.execute(
@@ -155,7 +150,47 @@ def handle_message(message, sender):
         )
         print("Message sent!")
     
+def handle_history(message, sender, client_socket):
+    print("Message command: ", message)
+    parts = message.split(" ", 2)
+    receiver = parts[1]
+    
+    sender_id = get_sender_id(sender)
+    receiver_id = get_receiver_id(receiver)
+    
+    cursor.execute(                        #where user is sender                |            where user is receiver
+        "SELECT sender_id, message, created_at FROM messages WHERE sender_id = %s AND receiver_id = %s OR sender_id = %s AND receiver_id = %s ORDER BY created_at",(sender_id,receiver_id, receiver_id,sender_id )
+    )
+    message_history = cursor.fetchall()
+    client_socket.sendall((b"-------------Message History------------\n"))
+    for msg in message_history:
+        msg_sender_id = msg[0]
+        text = msg[1]
+        time = msg[2]
+        
+        cursor.execute("SELECT username FROM users WHERE id = %s",(msg_sender_id,))
 
+        msg_sender = cursor.fetchone()[0]
+        formatted_time = time.strftime("%I:%M %p - %m/%d/%y")
+        client_socket.sendall((f"{msg_sender}: {text:<55}{formatted_time}\n").encode())
+    client_socket.sendall((b"----------------------------------------"))
+    client_socket.sendall(b"HISTORY_END\n")
+def get_sender_id(sender):
+    cursor.execute(
+        "SELECT id FROM users WHERE username = %s",(sender,)
+    )
+    #sets variable id for user_id
+    sender_id = cursor.fetchone()[0]
+    return sender_id
+
+def get_receiver_id(sender):
+    cursor.execute(
+        "SELECT id FROM users WHERE username = %s",(sender,)
+    )
+    #sets variable id for user_id
+    receiver_id = cursor.fetchone()[0]
+    return receiver_id
+    
 #create sockets 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
