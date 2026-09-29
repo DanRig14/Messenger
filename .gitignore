@@ -2,3 +2,4 @@
 .venv/
 .venv
 *_test.py
+.env

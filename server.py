@@ -31,10 +31,9 @@ clients = []
 
 logged_in_users = {}
 
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 #instead of only accepting 1 it will accpet and go to another client
-def handle_client(connection, address):
+def handle_client(client_socket, address):
     #what stage of the login proccess the client is int
     login_stage = None
     #if they are logged in
@@ -45,7 +44,7 @@ def handle_client(connection, address):
 
     while True:
         try:
-            data = connection.recv(1024)
+            data = client_socket.recv(1024)
         except ConnectionResetError:
             break
 
@@ -65,13 +64,13 @@ def handle_client(connection, address):
             if message == "LOGIN":
                 login_stage = "username"
                 print("Client wants login")
-                connection.sendall(b"USERNAME\n")
+                client_socket.sendall(b"USERNAME\n")
 
             elif login_stage == "username":
                 username = message
                 print("Username:", username)
                 login_stage = "password"
-                connection.sendall(b"PASSWORD\n")
+                client_socket.sendall(b"PASSWORD\n")
 
             elif login_stage == "password":
                 password = message
@@ -82,7 +81,7 @@ def handle_client(connection, address):
                 user = cursor.fetchone()
                 
                 if user is None:
-                    connection.sendall(b"LOGIN_FAILED\n")
+                    client_socket.sendall(b"LOGIN_FAILED\n")
                 else:
                     password_hash = user[0]
 
@@ -90,19 +89,19 @@ def handle_client(connection, address):
                     try:
                         password_hasher.verify(password_hash, password)
                         logged_in_user = username
-                        logged_in_users[username] = connection
+                        logged_in_users[username] = client_socket
                         print(logged_in_users)
-                        connection.sendall(b"LOGIN_SUCCESS\n")
+                        client_socket.sendall(b"LOGIN_SUCCESS\n")
                     except:
-                        connection.sendall(b"LOGIN_FAILED\n")
+                        client_socket.sendall(b"LOGIN_FAILED\n")
                 login_stage = None
                 #if user tries to send message then send a message if they are logged in
             elif logged_in_user is not None and message.startswith("MESSAGE"):
                 handle_message(message,logged_in_user)           
             
 
-    connection.close()
-    clients.remove(connection)
+    client_socket.close()
+    clients.remove(client_socket)
     print("Disconnected:", address)
 
 
@@ -112,8 +111,8 @@ def handle_message(message, sender):
     print("Message Command: ", message)
     #takes message and splits it into 3 parts
     parts = message.split(" ", 2)
-    #who the reciever is
-    reciever = parts[1]
+    #who the receiver is
+    receiver = parts[1]
     #what the message is
     msg = parts[2]
     
@@ -125,17 +124,33 @@ def handle_message(message, sender):
     sender_id = cursor.fetchone()[0]
     #prints sender's id
     print("SENDER ID: ", sender_id)
+    
+    #same for sender ID
+    cursor.execute(
+        "SELECT id FROM users WHERE username = %s", (receiver,)
+    )
+    receiver_id  = cursor.fetchone()[0]
+    print("RECIEVER ID: ", receiver_id)
+    
+    #inserts query into database with sender_id, receiver_id, and the message, with the date and time done automatically
+    cursor.execute(
+       "INSERT INTO messages (sender_id, receiver_id, message) VALUES (%s,%s,%s)" ,(sender_id,receiver_id ,msg)
+    )
+    #puts into database
+    connection.commit()
+    print("Message saved in Database!")
+    
     #gets connection where the message will go / the recievers connection
-    reciever_connection = logged_in_users.get(reciever)
-    print(reciever_connection)
+    receiver_connection = logged_in_users.get(receiver)
+    print(receiver_connection)
     #if there is no connection then there is no user or they are offline
-    if reciever_connection is None:
+    if receiver_connection is None:
         print("User not online or not available")
-    #if connection prints reciever
+    #if connection prints receiver
     else:
-        print("Sending message to", reciever)
+        print("Sending message to", receiver) 
         #sends message
-        reciever_connection.sendall(
+        receiver_connection.sendall(
             ("MESSAGE " + sender + ": " + msg + "\n").encode()
         )
         print("Message sent!")
@@ -155,14 +170,14 @@ print("Waiting for connection!")
 #use while loop so it doesnt only accept 1 client 
 #accept -> create thread -> accept -> create thread -> repeat
 while True:
-     #accepts the client at a connection and address   
-    connection, address = server_socket.accept()
-    clients.append(connection)
+     #accepts the client at a client_socket and address   
+    client_socket, address = server_socket.accept()
+    clients.append(client_socket)
     
     #create thread, will run handle_client and give in connection and address
     thread = threading.Thread(
         target = handle_client,
-        args = (connection, address)
+        args = (client_socket, address)
     )
     #after creating the thread, start it
     thread.start()
