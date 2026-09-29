@@ -57,14 +57,13 @@ Tech: Python, PostgresSQL, TCP, Argon2, Git
 <tr>
 <td width="50%" valign="top">
 
-### xxx -
+### Dx0001 - Naming Collision 
+**Status: Fixed**    
+**Priority: High**    
+**Date Added: 9/28/2026**  
+**Date Fixed: 9/28/2026**   
 
-**Status:**    
-**Priority:**    
-**Date Added:**  
-**Date Fixed:** —  
-
-**Description**
+**Description** Naming collision with PostgreSQL and Socket connection. Variable name 'connection' was overlapping with socket connection variable and connection variable for PostgreSQL.
 
 </td>
 
