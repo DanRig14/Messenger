@@ -76,9 +76,15 @@ def handle_client(client_socket, address):
                 password = message
                 print("Password:", password)
                 cursor.execute(
-                    "SELECT password_hash FROM users WHERE username = %s", (username,)
+                    "SELECT password_hash, role FROM users WHERE username = %s", (username,)
                     )
                 user = cursor.fetchone()
+                
+                password_hash = user[0]
+                user_role = user[1]
+                logged_in_user = username
+                logged_in_users[username] = client_socket
+                
                 
                 if user is None:
                     client_socket.sendall(b"LOGIN_FAILED\n")
@@ -89,7 +95,10 @@ def handle_client(client_socket, address):
                     try:
                         password_hasher.verify(password_hash, password)
                         logged_in_user = username
-                        logged_in_users[username] = client_socket
+                        logged_in_users[username] = {
+                            "socket": client_socket,
+                            "role": user_role
+                        }
                         print(logged_in_users)
                         client_socket.sendall(b"LOGIN_SUCCESS\n")
                     except:
@@ -97,7 +106,7 @@ def handle_client(client_socket, address):
                 login_stage = None
                 #if user tries to send message then send a message if they are logged in
             elif logged_in_user is not None and message.startswith("MESSAGE"):
-                handle_message(message,logged_in_user)    
+                handle_message(message,logged_in_user, client_socket)    
                 
             elif logged_in_user is not None and message.startswith("HISTORY"):
                 handle_history(message, logged_in_user,client_socket)            
@@ -108,24 +117,39 @@ def handle_client(client_socket, address):
 
 
 #handles sending messages
-def handle_message(message, sender):
+def handle_message(message, sender, client_socket):
     #gets message and prints it
     print("Message Command: ", message)
+    
+
     #takes message and splits it into 3 parts
     parts = message.split(" ", 2)
-    #who the receiver is
+    #who` the receiver is
     receiver = parts[1]
     #what the message is
     msg = parts[2]
+            
     
-    #sets variable id for user_id
+        
+    #sets variable for ID both
     sender_id = get_sender_id(sender)
+    receiver_id  = get_receiver_id(receiver)
+    
+    #sets variable for role for both
+    sender_role = get_user_role(sender)
+    receiver_role = get_user_role(receiver)
+    
     #prints sender's id
     print("SENDER ID: ", sender_id)
-    
-    #same for sender ID
-    receiver_id  = get_receiver_id(receiver)
     print("Receiver ID: ", receiver_id)
+    print("SENDER ROLE:", sender_role)
+    print("RECEIVER ROLE:", receiver_role)
+    
+    
+    if not can_message(sender_role, receiver_role):
+        print("MESSAGE BLOCKED")
+        client_socket.sendall((b"ERROR:Can not send message due to role!\n"))
+        return
     
     #inserts query into database with sender_id, receiver_id, and the message, with the date and time done automatically
     cursor.execute(
@@ -137,6 +161,9 @@ def handle_message(message, sender):
     
     #gets connection where the message will go / the recievers connection
     receiver_connection = logged_in_users.get(receiver)
+    if receiver_connection is not None:
+        receiver_connection = receiver_connection["socket"]
+    
     print(receiver_connection)
     #if there is no connection then there is no user or they are offline
     if receiver_connection is None:
@@ -175,6 +202,22 @@ def handle_history(message, sender, client_socket):
         client_socket.sendall((f"{msg_sender}: {text:<55}{formatted_time}\n").encode())
     client_socket.sendall((b"----------------------------------------"))
     client_socket.sendall(b"HISTORY_END\n")
+ 
+#determines if the sender can message the receiver and who the sender can message
+def can_message(sender_role, receiver_role):
+    if sender_role == "user":
+        return receiver_role == "Supervisor"
+    elif sender_role == "Employee":
+        return receiver_role == "Employee" or receiver_role == "Supervisor"
+    elif sender_role == "Supervisor":
+        return receiver_role == "Employee" or receiver_role == "Supervisor" or receiver_role == "user"
+    elif sender_role == "Manager":
+        return True
+    else:
+        return False
+ 
+ 
+#gets sender id    
 def get_sender_id(sender):
     cursor.execute(
         "SELECT id FROM users WHERE username = %s",(sender,)
@@ -183,6 +226,7 @@ def get_sender_id(sender):
     sender_id = cursor.fetchone()[0]
     return sender_id
 
+#gets receivers id
 def get_receiver_id(sender):
     cursor.execute(
         "SELECT id FROM users WHERE username = %s",(sender,)
@@ -190,7 +234,16 @@ def get_receiver_id(sender):
     #sets variable id for user_id
     receiver_id = cursor.fetchone()[0]
     return receiver_id
-    
+
+#gets users role
+def get_user_role(sender):
+    cursor.execute(
+        "SELECT role FROM users WHERE username = %s",
+        (sender,)
+    )
+    role = cursor.fetchone()[0]
+    return role
+
 #create sockets 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 

@@ -27,8 +27,11 @@ def recieve_message():
                 # prints message (without MESSAGE)
                 print("\n" + message[8:])
                 print("> ", end="", flush=True)
+            elif message.startswith("ERROR"):
+                print("\nERROR:", message[6:])
+                print("> ", end="", flush=True)
+
             else:
-                # if it's not a MESSAGE put into queue
                 message_queue.put(message)
                 
             

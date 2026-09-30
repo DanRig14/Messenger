@@ -18,6 +18,13 @@ Tech: Python, PostgresSQL, TCP, Argon2, Git
 * Database (Messages/User not connecting to Postgres or anything related) DBx0001
 * Functional (not being able to send message, type, login) FNx0001
 
+
+### Roles
+
+#### Role       Can message
+* Employee      Employees
+* Supervisor    Empl + Supervisor
+* Manager       Everyone
 # Known Bugs
 
 <table>
